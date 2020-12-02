@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme.ProgressBar">
+        <item name="colorAccent">@color/light_green_500</item>
+    </style>
+</resources>

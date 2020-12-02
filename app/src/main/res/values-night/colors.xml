@@ -12,6 +12,6 @@
     <color name="light_green_a700_alpha_84">#D66EAE0C</color>
     <color name="light_green_a200">#C0FA70</color>
 
-    <color name="background">@android:color/white</color>
-    <color name="color_text">@android:color/black</color>
+    <color name="background">@android:color/black</color>
+    <color name="color_text">@android:color/white</color>
 </resources>
