@@ -1,4 +1,4 @@
-package com.example.cococ.ui;
+package com.example.cococ.ui.home;
 
 import android.content.Context;
 import android.text.Html;
@@ -21,18 +21,18 @@ import com.example.cococ.utils.Utils;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder>{
+public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
 
     private final List<Article> articles;
-    private ItemClickListener itemClickListener;
+    private static ItemClickListener<Article> listener;
     private final Context mContext;
 
-    public MainAdapter(Context context){
+    public MainAdapter(Context context) {
         this.mContext = context;
         this.articles = new ArrayList<>();
     }
 
-    public void addAll(List<Article> articles){
+    public void addAll(List<Article> articles) {
         this.articles.addAll(articles);
         notifyDataSetChanged();
     }
@@ -42,8 +42,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder>{
         notifyDataSetChanged();
     }
 
-    public void setItemClickListener(ItemClickListener itemClickListener) {
-        this.itemClickListener = itemClickListener;
+    public void setOnItemClickListener(ItemClickListener<Article> itemClickListener) {
+        listener = itemClickListener;
     }
 
     @NonNull
@@ -59,17 +59,18 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder>{
         String sTemp;
 
         sTemp = articles.get(position).getTitle();
-        if(!TextUtils.isEmpty(sTemp)){
+        if (!TextUtils.isEmpty(sTemp)) {
             holder.tvTitle.setText(sTemp);
         }
 
         sTemp = articles.get(position).getDescription();
-        if(!TextUtils.isEmpty(sTemp)){
+        if (!TextUtils.isEmpty(sTemp)) {
             String content = Utils.getContent(sTemp);
-
-            if(TextUtils.isEmpty(content)){
-                holder.tvContent.setText(Html.fromHtml(content));
-            }else {
+            // There are some descriptions without image url
+            // if there is no image url then show fromHtml
+            if (TextUtils.isEmpty(content)) {
+                holder.tvContent.setText(Html.fromHtml(sTemp));
+            } else {
                 holder.tvContent.setText(content);
             }
         }
@@ -79,6 +80,12 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder>{
                 .centerCrop()
                 .placeholder(R.drawable.ic_baseline_image_24)
                 .into(holder.imageView);
+
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onClick(v, position, articles.get(position));
+            }
+        });
     }
 
 
@@ -87,7 +94,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder>{
         return articles.size();
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder{
+    public static class ViewHolder extends RecyclerView.ViewHolder {
 
         public TextView tvTitle;
         public ImageView imageView;

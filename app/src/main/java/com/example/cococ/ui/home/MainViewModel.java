@@ -1,4 +1,4 @@
-package com.example.cococ.ui;
+package com.example.cococ.ui.home;
 
 import android.util.Log;
 
@@ -18,22 +18,18 @@ import retrofit2.Response;
 
 public class MainViewModel extends ViewModel {
 
-    private  MutableLiveData<RssFeed> repoRssFeed;
+    private final MutableLiveData<RssFeed> repoRssFeed = new MutableLiveData<>();
     private final MutableLiveData<Boolean> repoLoading = new MutableLiveData<>();
 
-    public LiveData<RssFeed> getNewsFeed(){
-       if(repoRssFeed == null){
-           repoRssFeed = new MutableLiveData<>();
-       }
-       fetchNewsFeed();
-       return repoRssFeed;
+    public LiveData<RssFeed> getRepoNewsFeed() {
+        return repoRssFeed;
     }
 
-    public MutableLiveData<Boolean> getLoading(){
+    public MutableLiveData<Boolean> getRepoLoading() {
         return repoLoading;
     }
 
-    private void fetchNewsFeed(){
+    public void fetchNewsFeed() {
         repoLoading.postValue(true);
 
         Call<RssFeed> call = APIClient.getClient().create(APIInterface.class).getFeed();
@@ -49,7 +45,7 @@ public class MainViewModel extends ViewModel {
                 call.cancel();
                 repoLoading.postValue(false);
                 repoRssFeed.postValue(null);
-                Log.d("DevDebug","fetchNewsFeed fail "+ t.getMessage());
+                Log.d("DevDebug", "fetchNewsFeed fail " + t.getMessage());
             }
         });
     }

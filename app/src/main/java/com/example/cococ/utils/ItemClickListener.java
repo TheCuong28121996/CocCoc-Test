@@ -2,6 +2,6 @@ package com.example.cococ.utils;
 
 import android.view.View;
 
-public interface ItemClickListener {
-    void onClick(View view, int position);
+public interface ItemClickListener<D> {
+    void onClick(View view, int position, D data);
 }
