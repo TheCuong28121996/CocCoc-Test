@@ -1,9 +1,8 @@
 package com.example.cococ.ui;
 
-import android.media.Image;
+import android.content.Context;
 import android.text.Html;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,25 +12,33 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.cococ.R;
 import com.example.cococ.data.Article;
 import com.example.cococ.utils.ItemClickListener;
+import com.example.cococ.utils.Utils;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 
 public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder>{
 
-    private List<Article> articles;
+    private final List<Article> articles;
     private ItemClickListener itemClickListener;
+    private final Context mContext;
 
-    public void pushData(List<Article> articles){
-        this.articles = articles;
+    public MainAdapter(Context context){
+        this.mContext = context;
+        this.articles = new ArrayList<>();
+    }
+
+    public void addAll(List<Article> articles){
+        this.articles.addAll(articles);
+        notifyDataSetChanged();
+    }
+
+    public void clear() {
+        this.articles.clear();
         notifyDataSetChanged();
     }
 
@@ -58,28 +65,26 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder>{
 
         sTemp = articles.get(position).getDescription();
         if(!TextUtils.isEmpty(sTemp)){
-            holder.tvContent.setText(sTemp);
+            String content = Utils.getContent(sTemp);
+
+            if(TextUtils.isEmpty(content)){
+                holder.tvContent.setText(Html.fromHtml(content));
+            }else {
+                holder.tvContent.setText(content);
+            }
         }
 
-        String regularExpression = "src=\"(.*)\"?w=";
-        Pattern pattern = Pattern.compile(regularExpression);
-        Matcher matcher = pattern.matcher(sTemp);
-
-
-        if (matcher.find( )) {
-            System.out.println("Found value: " + matcher.group(1) );
-            //It's prints Found value: http://example.com/image.png
-        }
+        Glide.with(mContext)
+                .load(Utils.getImageUrl(sTemp))
+                .centerCrop()
+                .placeholder(R.drawable.ic_baseline_image_24)
+                .into(holder.imageView);
     }
-
 
 
     @Override
     public int getItemCount() {
-        if (null != articles) {
-            return articles.size();
-        }
-        return 0;
+        return articles.size();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder{

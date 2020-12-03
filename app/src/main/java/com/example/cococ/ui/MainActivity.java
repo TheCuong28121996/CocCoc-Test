@@ -1,31 +1,23 @@
 package com.example.cococ.ui;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.cococ.R;
-import com.example.cococ.data.RssFeed;
-import com.example.cococ.remote.APIClient;
-import com.example.cococ.remote.APIInterface;
 import com.example.cococ.utils.SharedPrefs;
 import com.google.android.material.appbar.MaterialToolbar;
-
-import okhttp3.OkHttpClient;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.simplexml.SimpleXmlConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -33,6 +25,10 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private MaterialToolbar toolbar;
     private MainAdapter adapter;
+    private SwipeRefreshLayout refreshLayout;
+    private TextView tvNotFound;
+    private MainViewModel viewModel;
+    private boolean isRefresh;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -41,8 +37,6 @@ public class MainActivity extends AppCompatActivity {
 
         initView();
 
-        getNewsFeed();
-
         initData();
     }
 
@@ -50,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
         toolbar = (MaterialToolbar) findViewById(R.id.tool_bar);
         MenuItem menuItem = toolbar.getMenu().findItem(R.id.menu_switch);
         switchCompat = (SwitchCompat) menuItem.getActionView();
+        refreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        tvNotFound = (TextView) findViewById(R.id.tv_not_found);
 
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         recyclerView.setItemViewCacheSize(25);
@@ -59,8 +55,14 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setHasFixedSize(true);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
 
-        adapter = new MainAdapter();
+        viewModel = new ViewModelProvider(this).get(MainViewModel.class);
+        adapter = new MainAdapter(this);
         recyclerView.setAdapter(adapter);
+
+        refreshLayout.setOnRefreshListener(() ->{
+            isRefresh = true;
+            viewModel.getNewsFeed();
+        });
     }
 
     public void initData() {
@@ -70,6 +72,22 @@ public class MainActivity extends AppCompatActivity {
         switchCompat.setText(isMode ? "Dark mode" : "Light mode");
         switchCompat.setChecked(isMode);
         switchCompat.setOnCheckedChangeListener((buttonView, isChecked) -> handleSwitch(isChecked));
+
+        viewModel.getNewsFeed().observe(this, rssFeed ->{
+            if(isRefresh){
+                adapter.clear();
+            }
+
+            if(rssFeed != null){
+                adapter.addAll(rssFeed.getArticleList());
+                toolbar.setTitle(rssFeed.getChannelTitle());
+                tvNotFound.setVisibility(View.GONE);
+            }else {
+                tvNotFound.setVisibility(View.VISIBLE);
+            }
+        });
+
+        viewModel.getLoading().observe(this, isLoading -> refreshLayout.setRefreshing(isLoading));
     }
 
     private void handleSwitch(boolean isMode){
@@ -80,25 +98,5 @@ public class MainActivity extends AppCompatActivity {
 
     private void setMode(boolean isNight){
         AppCompatDelegate.setDefaultNightMode(isNight ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
-    }
-
-    private void getNewsFeed(){
-        Call<RssFeed> call = APIClient.getClient().create(APIInterface.class).getFeed();
-        call.enqueue(new Callback<RssFeed>() {
-            @Override
-            public void onResponse(Call<RssFeed> rssFeedCall, Response<RssFeed> response) {
-                Log.d("DevDebug","getNewsFeed onResponse "+response.code());
-                RssFeed rssFeed = response.body();
-
-                toolbar.setTitle(rssFeed.getChannelTitle());
-                adapter.pushData(rssFeed.getArticleList());
-            }
-
-            @Override
-            public void onFailure(Call<RssFeed> call, Throwable t) {
-                call.cancel();
-                Log.d("DevDebug","getNewsFeed fail "+ t.getMessage());
-            }
-        });
     }
 }
